@@ -1,0 +1,77 @@
+<?php
+
+class Usuario extends Model {
+
+        //Usada para add usuario na plataforma. 
+        public function setCadastro($nome, $faculdade, $cargo, $matricula, $senha) {
+
+            $senha = $matricula;
+            
+            $sql = $this->db->prepare("
+            INSERT INTO usuario 
+            SET nome = :nome,
+            faculdade = :faculdade,
+            cargo = :cargo,
+            matricula = :matricula,
+            senha = :matricula");
+
+            $sql->bindValue(":nome", $nome);
+            $sql->bindValue(":faculdade", $faculdade);
+            $sql->bindValue(":cargo", $cargo);
+            $sql->bindValue(":matricula", $matricula);
+            $sql->bindValue(":senha", $senha);
+            $sql->execute();
+        }   
+        
+        //Usada para verificar nome e senha do usuario(Fazer login)
+        public function Login($matriculaUsuario, $senhaUsuario) {
+            $sql = $this->db->prepare("SELECT matricula, senha FROM usuario WHERE matricula = :matriculaUsuario");
+            $sql->bindValue(":matriculaUsuario", $matriculaUsuario);
+            $sql->execute();
+        
+            if ($sql->rowCount() > 0) {
+                $usuario = $sql->fetch(PDO::FETCH_ASSOC);
+        
+                if (password_verify($senhaUsuario, $usuario['senha'])) {
+                    return $usuario; // Login bem-sucedido
+                } else {
+                    return false; // Senha incorreta
+                }
+            } else {
+                return false; // Usuário não encontrado
+            }
+        }
+        
+
+         // Usada quando o usuario logar na plataforma e for mudar sua senha.(Redefinição de senha apos login) ou para redefinir sua senha quando quiser. 
+        public function setSenha($matriculaDigitada, $senhaAtual, $novaSenha) {
+            $sql = $this->db->prepare("SELECT senha FROM usuario WHERE id = :$matriculaDigitada");
+            $sql->bindValue(":matriculaDigitada", $matriculaDigitada);
+            $sql->execute();
+        
+            if ($sql->rowCount() > 0) {
+
+                $usuario = $sql->fetch(PDO::FETCH_ASSOC);
+        
+                if (password_verify($senhaAtual, $usuario['senha'])) {
+                    $novaSenhaCriptografada = password_hash($novaSenha, PASSWORD_DEFAULT);
+                    $sql = $this->db->prepare("UPDATE usuario SET senha = :novaSenha WHERE id = :matriculaDigitada");
+                    $sql->bindValue(":novaSenha", $novaSenhaCriptografada);
+                    $sql->bindValue(":matriculaDigitada", $matriculaDigitada);
+                    $sql->execute();
+        
+                    return true; // Senha alterada com sucesso
+                } else {
+                    // Senha atual incorreta
+                    return false;
+                }
+            } else {
+                // Usuário não encontrado
+                return false;
+            }
+        }
+
+        
+        
+
+}

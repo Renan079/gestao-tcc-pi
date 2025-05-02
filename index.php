@@ -20,3 +20,4 @@ require 'Support/Message.php';
 
 $core = new Core();
 $core->run();
+

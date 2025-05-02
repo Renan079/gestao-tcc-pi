@@ -8,7 +8,7 @@ if(ENVIRONMENT == 'development'){
 	/**
 	 * DATABASE
 	 */	
-	define("CONF_DB_NAME", "ti_manager");
+	define("CONF_DB_NAME", "Pi");
 	define("CONF_DB_HOST", "localhost");
 	define("CONF_DB_USER", "root");
 	define("CONF_DB_PASS", "");	
@@ -23,8 +23,8 @@ if(ENVIRONMENT == 'development'){
 	/**
 	 * PROJECT URLs
 	 */ 
-	define("BASE_URL", "http://localhost/ti_manager/");
-	// define("BASE_URL", "http://192.168.18.9/ti_manager/");
+	define("BASE_URL", "http://localhost/Pi/");
+	// define("BASE_URL", "http://192.168.18.9/Pi/");
 	define("BASE_URL_ADMIN", BASE_URL."Admin");
 	
 	/**
@@ -68,7 +68,7 @@ if(ENVIRONMENT == 'development'){
 	/**
 	 * SESSION 
 	 */
-	define("CONF_SESSION_NAME", "ti_manager");
+	define("CONF_SESSION_NAME", "Pi");
 
 
 } else{

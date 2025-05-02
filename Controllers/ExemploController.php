@@ -6,8 +6,7 @@ class ExemploController extends Controller
 	private $data = array();
 
 	public function __construct()
-	{
-	}
+	{}
 
 	public function index()
 	{
@@ -17,7 +16,9 @@ class ExemploController extends Controller
 		$exemplo = new ExemploModel();
 
 		$idParaUsarnoMetodo = 1;
-		$this->data['exemplos'] = $exemplo->exemploDeUso($idParaUsarnoMetodo);
+		$this->data['usuario'] = $exemplo->exemploDeUso($idParaUsarnoMetodo);
+		$this->data['pdf'] = $exemplo->exemploDeUso($idParaUsarnoMetodo);
+		$this->data['atividade'] = $exemplo->exemploDeUso($idParaUsarnoMetodo);
 
 		$this->data['JS'] .= customJS('/libs/sweetalert/sweetalert2.all.min');
 		$this->data['JS'] .= customJS('/libs/sweetalert/warnings');
