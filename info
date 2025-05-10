@@ -4,6 +4,4 @@ git add . – Adicione todas as alterações ao staging.
 
 git commit -m "Mensagem do commit" – Faça o commit das alterações.
 
-git pull origin main – (opcional, mas recomendado) Atualize seu repositório local com as mudanças remotas.
-
 git push origin main – Envie suas alterações para o GitHub. -->

@@ -3,7 +3,7 @@
 class Usuario extends Model {
 
         //Usada para add usuario na plataforma. 
-        public function setCadastro($nome, $faculdade, $cargo, $matricula, $senha) {
+        public function setCadastroAluno($nome, $faculdade, $cargo, $matricula, $senha) {
 
             $senha = $matricula;
             
@@ -21,31 +21,26 @@ class Usuario extends Model {
             $sql->bindValue(":matricula", $matricula);
             $sql->bindValue(":senha", $senha);
             $sql->execute();
-        }   
+        }  
         
-        //Usada para verificar nome e senha do usuario(Fazer login)
-        public function Login($matriculaUsuario, $senhaUsuario) {
-            $sql = $this->db->prepare("SELECT matricula, senha FROM usuario WHERE matricula = :matriculaUsuario");
-            $sql->bindValue(":matriculaUsuario", $matriculaUsuario);
-            $sql->execute();
-        
-            if ($sql->rowCount() > 0) {
-                $usuario = $sql->fetch(PDO::FETCH_ASSOC);
-        
-                if (password_verify($senhaUsuario, $usuario['senha'])) {
-                    return $usuario; // Login bem-sucedido
-                } else {
-                    return false; // Senha incorreta
-                }
-            } else {
-                return false; // Usuário não encontrado
-            }
-        }
-        
+        public function setCadastro($nome, $cargo, $senha) {
+            
+            $sql = $this->db->prepare("
+            INSERT INTO usuario 
+            SET nome = :nome,
+            faculdade = :faculdade,
+            cargo = :cargo,
+            senha = :senha");
 
-         // Usada quando o usuario logar na plataforma e for mudar sua senha.(Redefinição de senha apos login) ou para redefinir sua senha quando quiser. 
-        public function setSenha($matriculaDigitada, $senhaAtual, $novaSenha) {
-            $sql = $this->db->prepare("SELECT senha FROM usuario WHERE id = :$matriculaDigitada");
+            $sql->bindValue(":nome", $nome);
+            $sql->bindValue(":cargo", $cargo);
+            $sql->bindValue(":senha", $senha);
+            $sql->execute();
+        } 
+        
+          // Usada quando o usuario logar na plataforma e for mudar sua senha.(Redefinição de senha apos login) ou para redefinir sua senha quando quiser. 
+        public function trocarSenhaAluno($matriculaDigitada, $senhaAtual, $novaSenha) {
+            $sql = $this->db->prepare("SELECT id FROM usuario WHERE matricula = :$matriculaDigitada");
             $sql->bindValue(":matriculaDigitada", $matriculaDigitada);
             $sql->execute();
         
@@ -55,9 +50,8 @@ class Usuario extends Model {
         
                 if (password_verify($senhaAtual, $usuario['senha'])) {
                     $novaSenhaCriptografada = password_hash($novaSenha, PASSWORD_DEFAULT);
-                    $sql = $this->db->prepare("UPDATE usuario SET senha = :novaSenha WHERE id = :matriculaDigitada");
+                    $sql = $this->db->prepare("UPDATE usuario SET senha = :novaSenha WHERE id =" . $usuario['id']);
                     $sql->bindValue(":novaSenha", $novaSenhaCriptografada);
-                    $sql->bindValue(":matriculaDigitada", $matriculaDigitada);
                     $sql->execute();
         
                     return true; // Senha alterada com sucesso
@@ -71,7 +65,95 @@ class Usuario extends Model {
             }
         }
 
+        // Usada quando o usuario logar na plataforma e for mudar sua senha.(Redefinição de senha apos login) ou para redefinir sua senha quando quiser. 
+        public function trocarSenhaProfessor($emailDigitado, $senhaAtual, $novaSenha) {
+            // Buscando o usuário nas três tabelas (orientador, coordenador, administrador)
+            $sql = $this->db->prepare(
+                "SELECT id, senha, 'orientador' AS tipo FROM orientador WHERE email = :emailProcurado
+                UNION ALL
+                SELECT id, senha, 'coordenador' AS tipo FROM coordenador WHERE email = :emailProcurado
+                UNION ALL
+                SELECT id, senha, 'administrador' AS tipo FROM administrador WHERE email = :emailProcurado"
+            );
+            
+            $sql->bindValue(":emailProcurado", $emailDigitado);
+            $sql->execute();
         
+            if ($sql->rowCount() > 0) {
+                $usuario = $sql->fetch(PDO::FETCH_ASSOC);
+        
+                // Verificando se a senha atual está correta
+                if (password_verify($senhaAtual, $usuario['senha'])) {
+                    // Criptografando a nova senha
+                    $novaSenhaCriptografada = password_hash($novaSenha, PASSWORD_DEFAULT);
+        
+                    // Alterando a senha conforme a tabela encontrada
+                    if ($usuario['tipo'] == 'Orientador') {
+                        $sql = $this->db->prepare("UPDATE orientador SET senha = :novaSenha WHERE id = :id");
+                    } elseif ($usuario['tipo'] == 'COORD') {
+                        $sql = $this->db->prepare("UPDATE coordenador SET senha = :novaSenha WHERE id = :id");
+                    } elseif ($usuario['tipo'] == 'ADM') {
+                        $sql = $this->db->prepare("UPDATE administrador SET senha = :novaSenha WHERE id = :id");
+                    }
+        
+                    $sql->bindValue(":novaSenha", $novaSenhaCriptografada);
+                    $sql->bindValue(":id", $usuario['id']);
+                    $sql->execute();
+        
+                    return true; // Senha alterada com sucesso
+                } else {
+                    // Senha atual incorreta
+                    return false;
+                }
+            } else {
+                // Usuário não encontrado
+                return false;
+            }
+        }
         
 
+        //Usada para verificar a matricula do usuario e sua senha.
+        public function verificarLoginAluno($matriculaDigitada, $senha) {
+
+            $sql = $this->db->prepare("SELECT id, matricula, senha FROM Orientando WHERE matricula = :matricula AND senha = :senha");
+            $sql->bindValue(':matricula', $matriculaDigitada);
+            $sql->bindValue(':senha', $senha);
+            $sql->execute();
+        
+            if ($sql->rowCount() > 0) {
+                return true; 
+            }else {
+                return false;
+                }
+        }
+
+        //Usada para verificar o email do usuario e nova senha.
+        public function verificarLoginProfessor($emailDigitado, $senha) {
+            $sql = $this->db->prepare(
+                "SELECT id, email, senha FROM 
+                    (SELECT id, email, senha FROM orientador 
+                    UNION ALL 
+                    SELECT id, email, senha FROM coordenador
+                    UNION ALL 
+                    SELECT id, email, senha FROM administrador)
+                WHERE email = :email AND senha = :senha");
+            
+            $sql->bindValue(':email', $emailDigitado);
+            $sql->bindValue(':senha', $senha);
+            $sql->execute();
+            
+            if ($sql->rowCount() > 0) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        
+
+        
+
+
+
+
 }
+        
